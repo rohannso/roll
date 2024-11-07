@@ -1,0 +1,63 @@
+CREATE TABLE O_RollCall (
+    Roll_No INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Class VARCHAR(50)
+);
+
+CREATE TABLE N_RollCall (
+    Roll_No INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Class VARCHAR(50)
+);
+
+INSERT INTO O_RollCall VALUES
+(1, 'John Doe', 'Class A'),
+(2, 'Jane Smith', 'Class A');
+
+INSERT INTO N_RollCall VALUES
+(1, 'John Doe', 'Class A'),
+(2, 'Jane Smith', 'Class A'),
+(3, 'Bob Wilson', 'Class A'),
+(4, 'Alice Brown', 'Class B');
+
+DELIMITER $
+
+Create procedure Merged()
+BEGIN
+Declare v_roll int;
+declare v_name varchar(100);
+declare v_class varchar(50);
+declare v_done INT DEFAULT FALSE;
+Declare v_count int;
+Declare cur_all_records CURSOR FOR
+SELECT Roll_No, Name, Class
+FROM N_RollCall;
+
+Declare continue handler for not found set v_done = true;
+Declare exit handler for sqlexception select 'An unexpected error occured';
+
+Open cur_all_records;
+
+fetch_loop: LOOP
+fetch cur_all_records into v_roll,v_name,v_class;
+
+If v_done THEN
+    Leave fetch_loop;
+End if;
+
+Select count(*) into v_count
+From O_RollCall
+Where Roll_No = v_roll;
+
+If v_count=0 then
+    Insert into O_RollCall
+    Values(v_roll,v_name,v_class);
+End if;
+End LOOP;
+Call Merged();
+
+
+
+Close cur_all_records;
+
+End;
